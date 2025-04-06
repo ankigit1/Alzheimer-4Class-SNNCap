@@ -37,8 +37,8 @@ We present a novel deep learning approach combining Siamese Networks with Capsul
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/alzheimer-snncap.git
-cd alzheimer-snncap
+git clone https://github.com/ankigit1/Alzheimer-4Class-SNNCap
+cd Alzheimer-4Class-SNNCap
 ```
 
 ### 2. Install dependencies
@@ -47,7 +47,7 @@ pip install -r requirements.txt
 ```
 
 ### 3. Add your dataset
-Place the dataset (Mendeley MRI Alzheimer) in this folder structure:
+Place the dataset [(Mendeley MRI Alzheimer)](https://data.mendeley.com/datasets/ch87yswbz4/1) in this folder structure:
 ```
 /dataset/
 ├── NonDemented/
@@ -97,7 +97,7 @@ Confusion Matrix and ROC Curves can be found in the paper/report.
 ```
 
 ## 🤝 Contact
-For questions, please contact: [ankitgarg5745@gmail.com](mailto:ankitgarg5745@gmail.com)
+For questions, please contact: [Ankit Garg](mailto:ankitgarg5745@gmail.com)
 
 ---
 
