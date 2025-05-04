@@ -2,7 +2,7 @@
 
 This repository contains the codebase for our research project titled:
 
-> **Introducing Siamese Capsule Network for Alzheimer’s Diagnosis via MRI Analysis**
+> **Siamese Capsule Network (SNNCap) : Cognitive Analysis for Alzheimer’s Disease Classification from MRI Data**
 
 We present a novel deep learning approach combining Siamese Networks with Capsule Networks for accurate classification of Alzheimer's stages from brain MRI scans.
 
