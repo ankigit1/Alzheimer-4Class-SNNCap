@@ -78,8 +78,8 @@ Make sure the following files exist:
 ---
 
 ## 📁 GDrive Links (for large files)
-- ✅ [Checkpoint (.pth)](https://drive.google.com/file/d/14br_vhqeJ4HoeU7qrIvFTcUyVtaBSm7S/view?usp=sharing)
-- ✅ [Reference Embeddings (.pt)](https://drive.google.com/file/d/1i7f58FWk-jFJ_PVgCJD-MZw5zDnKpQ46/view?usp=sharing)
+- ✅ [Checkpoint (.pth)]([https://drive.google.com/file/d/14br_vhqeJ4HoeU7qrIvFTcUyVtaBSm7S/view?usp=sharing](https://drive.google.com/file/d/1H3nt3QSzHjieJSlJ9K4AEpxte_J0lkrX/view?usp=sharing))
+- ✅ [Reference Embeddings (.pt)]([https://drive.google.com/file/d/1i7f58FWk-jFJ_PVgCJD-MZw5zDnKpQ46/view?usp=sharing](https://drive.google.com/file/d/1NYieFHumhOl3x5Nc6hazkF9-mvKe5c9y/view?usp=sharing))
 
 ---
 
