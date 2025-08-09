@@ -1,5 +1,6 @@
 # 🧠 Alzheimer’s Stage Classification Using Siamese Capsule Network (SNNCap)
 [You can test the model here](https://huggingface.co/spaces/ankitgarg98/alzheimer-mri-classifier)
+
 This repository contains the codebase for our research project titled:
 
 > **Siamese Capsule Network (SNNCap) : Cognitive Analysis for Alzheimer’s Disease Classification from MRI Data**
@@ -102,4 +103,5 @@ For questions, please contact: [Ankit Garg](mailto:ankitgarg5745@gmail.com)
 ---
 
 © 2025 Ankit Garg | M.Tech Data Analytics | NIT Jalandhar
+
 
