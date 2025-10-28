@@ -1,5 +1,5 @@
 # 🧠 Alzheimer’s Stage Classification Using Siamese Capsule Network (SNNCap)
-[You can test the model here](https://thewiseindia.com/)
+[You can test the model here](https://www.brainhealthai.me/)
 
 This repository contains the codebase for our research project titled:
 
@@ -103,6 +103,7 @@ For questions, please contact: [Ankit Garg](mailto:ankitgarg5745@gmail.com)
 ---
 
 © 2025 Ankit Garg | M.Tech Data Analytics | NIT Jalandhar
+
 
 
 
