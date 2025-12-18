@@ -1,0 +1,191 @@
+# ===============================
+# Imports
+# ===============================
+import os
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision.transforms as T
+import torchvision.models as models
+from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader
+from sklearn.metrics import accuracy_score, f1_score
+import numpy as np
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# ===============================
+# Paths
+# ===============================
+TRAIN_DIR = "/kaggle/input/augmented-alzheimer-mri-dataset/AugmentedAlzheimerDataset"
+TEST_DIR  = "/kaggle/input/augmented-alzheimer-mri-dataset/OriginalDataset"
+
+NUM_CLASSES = 4
+IMG_SIZE = 224
+BATCH_SIZE = 32
+EPOCHS = 10
+LR = 1e-4
+
+# ===============================
+# Transforms
+# ===============================
+transform = T.Compose([
+    T.Grayscale(num_output_channels=1),
+    T.Resize((IMG_SIZE, IMG_SIZE)),
+    T.ToTensor(),
+    T.Normalize(mean=[0.5], std=[0.5])
+])
+
+# ===============================
+# Datasets
+# ===============================
+train_ds = ImageFolder(TRAIN_DIR, transform=transform)
+test_ds  = ImageFolder(TEST_DIR, transform=transform)
+
+train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+test_loader  = DataLoader(test_ds, batch_size=1, shuffle=False)
+
+# ===============================
+# Capsule Layers
+# ===============================
+class PrimaryCapsules(nn.Module):
+    def __init__(self, in_channels=512, num_caps=32, cap_dim=8):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, num_caps * cap_dim, 3, 1, 1)
+        self.num_caps = num_caps
+        self.cap_dim = cap_dim
+
+    def forward(self, x):
+        x = self.conv(x)
+        B, _, H, W = x.shape
+        x = x.view(B, self.num_caps, self.cap_dim, H * W)
+        x = x.permute(0, 3, 1, 2).contiguous()
+        x = x.view(B, -1, self.cap_dim)
+        return self.squash(x)
+
+    def squash(self, x):
+        norm = torch.norm(x, dim=-1, keepdim=True)
+        return (norm / (1 + norm**2)) * x / (norm + 1e-8)
+
+class DigitCapsules(nn.Module):
+    def __init__(self, in_caps, num_classes, in_dim=8, out_dim=16):
+        super().__init__()
+        self.W = nn.Parameter(0.01 * torch.randn(1, in_caps, num_classes, out_dim, in_dim))
+
+    def forward(self, x):
+        B = x.size(0)
+        x = x.unsqueeze(2).unsqueeze(4)
+        W = self.W.repeat(B, 1, 1, 1, 1)
+        u_hat = torch.matmul(W, x).squeeze(-1)
+        c = torch.softmax(torch.zeros_like(u_hat[..., 0]), dim=2)
+        s = (c.unsqueeze(-1) * u_hat).sum(dim=1)
+        return self.squash(s)
+
+    def squash(self, x):
+        norm = torch.norm(x, dim=-1, keepdim=True)
+        return (norm / (1 + norm**2)) * x / (norm + 1e-8)
+
+# ===============================
+# Model Variants
+# ===============================
+
+# 1. ResNet-18 Only
+class CNNBaseline(nn.Module):
+    def __init__(self):
+        super().__init__()
+        m = models.resnet18(pretrained=True)
+        m.conv1 = nn.Conv2d(1, 64, 7, 2, 3, bias=False)
+        m.fc = nn.Linear(512, NUM_CLASSES)
+        self.model = m
+
+    def forward(self, x):
+        return self.model(x)
+
+# 2. ResNet + Capsules
+class CNNCaps(nn.Module):
+    def __init__(self):
+        super().__init__()
+        base = models.resnet18(pretrained=True)
+        base.conv1 = nn.Conv2d(1, 64, 7, 2, 3, bias=False)
+        self.features = nn.Sequential(*list(base.children())[:-2])
+        self.primary = PrimaryCapsules()
+        self.digit = DigitCapsules(32 * 7 * 7, NUM_CLASSES)
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.primary(x)
+        x = self.digit(x)
+        return x.norm(dim=-1)
+
+# 3. Siamese CNN
+class SiameseCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = CNNBaseline()
+
+    def forward(self, x1, x2):
+        e1 = self.encoder(x1)
+        e2 = self.encoder(x2)
+        return torch.norm(e1 - e2, dim=1, keepdim=True)
+
+# 4. SiameseCaps (no reference-based testing)
+class SiameseCaps(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = CNNCaps()
+
+    def forward(self, x1, x2):
+        e1 = self.encoder(x1)
+        e2 = self.encoder(x2)
+        return torch.norm(e1 - e2, dim=1, keepdim=True)
+
+# ===============================
+# Training (classification)
+# ===============================
+def train_classifier(model):
+    model.to(device)
+    opt = optim.Adam(model.parameters(), lr=LR)
+    loss_fn = nn.CrossEntropyLoss()
+
+    for _ in range(EPOCHS):
+        model.train()
+        for x, y in train_loader:
+            x, y = x.to(device), y.to(device)
+            opt.zero_grad()
+            loss = loss_fn(model(x), y)
+            loss.backward()
+            opt.step()
+
+# ===============================
+# Evaluation (classification)
+# ===============================
+def eval_classifier(model):
+    model.eval()
+    y_true, y_pred = [], []
+    with torch.no_grad():
+        for x, y in test_loader:
+            x = x.to(device)
+            out = model(x)
+            y_pred.append(out.argmax(1).item())
+            y_true.append(y.item())
+    return accuracy_score(y_true, y_pred), f1_score(y_true, y_pred, average="macro")
+
+# ===============================
+# Run Ablation
+# ===============================
+results = {}
+
+models_dict = {
+    "ResNet-18 Only": CNNBaseline(),
+    "ResNet + Capsules": CNNCaps()
+}
+
+for name, model in models_dict.items():
+    train_classifier(model)
+    acc, f1 = eval_classifier(model)
+    results[name] = (acc, f1)
+    print(name, acc, f1)
+
+print("\nAblation Results:")
+for k, v in results.items():
+    print(k, v)
